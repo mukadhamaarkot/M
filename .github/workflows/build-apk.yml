@@ -1,0 +1,59 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # הורדת קוד הפרויקט
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # התקנת Java 17
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # התקנת Android SDK ללא חבילת tools הישנה
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      # התקנת רכיבי Android הדרושים לבנייה
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager --install \
+            "platforms;android-36" \
+            "build-tools;35.0.0"
+
+      # התקנת Gradle
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      # בניית קובץ APK
+      - name: Build debug APK
+        run: |
+          gradle --no-daemon assembleDebug
+
+      # שמירת קובץ ההתקנה
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: OfflineHebrewKeyboard-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
